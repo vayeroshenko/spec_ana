@@ -31,6 +31,7 @@ void setupNetwork();
 void sendUDPData();
 void sendKeepAlive();
 void sendPeaksData();
+void sendHandshake();
 void sendBuffer(const char* buffer, unsigned int size);
 
 // ********************
@@ -62,7 +63,11 @@ struct {
 
 struct {
   unsigned long int noiseLevel      = 360;
-  unsigned long int loopsPerReport  = 1024*512;
+
+//  unsigned long int noiseLevel      = 0;
+
+  unsigned long int loopsPerReport  = 8192;
+//  unsigned long int loopsPerReport  = 1024*512;
   unsigned long int reportsPerReset = 32;
 } DetectorConfig;
 
@@ -128,6 +133,12 @@ void sendKeepAlive() {
   sendBuffer(reply, sizeof(reply));
 }
 
+void sendHandshake() {
+  char reply[4];
+  memcpy(reply, (char*)(&HANDSHAKE), sizeof(int));
+  sendBuffer(reply, sizeof(reply));
+}
+
 void sendPeaksData() {
   const int step = 128;
   char reply[3*sizeof(int) + step*sizeof(int)];
@@ -173,6 +184,7 @@ void setup() {
   pinMode(RED_LED, OUTPUT);
   Serial.println("Ready to loop");
 //  noInterrupts();
+  sendHandshake();
 }
 
 void setupData() {
@@ -244,35 +256,39 @@ loopGoTo:
   while(!INTERRUPT_ON_ADC0SEQ0);
   // See ADCIntClear for the source code.
   CLEAR_INTERRUPT_ON_ADC0SEQ0; // Clear interrupt on Seq 0
-  collectedData[last] = READ_DATA_FROM_ADC0SEQ0;
-  collectedData[last+1] = READ_DATA_FROM_ADC0SEQ0;
-  collectedData[last+2] = READ_DATA_FROM_ADC0SEQ0;
-  collectedData[last+3] = READ_DATA_FROM_ADC0SEQ0;
-  last += 4;
-//  values[0] = READ_DATA_FROM_ADC0SEQ0;
-//  values[1] = READ_DATA_FROM_ADC0SEQ0;
-//  values[2] = READ_DATA_FROM_ADC0SEQ0;
-//  values[3] = READ_DATA_FROM_ADC0SEQ0;
-//  PROCESS_VALUE(values[0]);
-//  PROCESS_VALUE(values[1]);
-//  PROCESS_VALUE(values[2]);
-//  PROCESS_VALUE(values[3]);
+   collectedData[last] = READ_DATA_FROM_ADC0SEQ0;
+   collectedData[last+1] = READ_DATA_FROM_ADC0SEQ0;
+   collectedData[last+2] = READ_DATA_FROM_ADC0SEQ0;
+   collectedData[last+3] = READ_DATA_FROM_ADC0SEQ0;
+   last += 4;
+// values[0] = READ_DATA_FROM_ADC0SEQ0;
+// values[1] = READ_DATA_FROM_ADC0SEQ0;
+// values[2] = READ_DATA_FROM_ADC0SEQ0;
+// values[3] = READ_DATA_FROM_ADC0SEQ0;
+ PROCESS_VALUE(collectedData[last]);
+ PROCESS_VALUE(collectedData[last+1]);
+ PROCESS_VALUE(collectedData[last+2]);
+ PROCESS_VALUE(collectedData[last+3]);
     if (loops == 2048) {
-      loops = 0;
-      last = 0;
-      for (int z = 0; z < 8192; ++z) {
-        Serial.println(collectedData[z]);
-      }
-    }
-//  if (loops == DetectorConfig.loopsPerReport) {
-//    loops = 0;
-//    reports++;
-//    int packetSize = Udp.parsePacket();
-//    if (packetSize) {
-//      Serial.println("PACKET!");
-//    }
-//    sendUDPData();
-//  }
+       
+       for (int z = 0; z < 8192; ++z) {
+         Serial.println(collectedData[z]);
+         
+       }
+       sendUDPData();
+       loops = 0;
+       last = 0;
+     }
+     
+// if (loops == DetectorConfig.loopsPerReport) {
+//   loops = 0;
+//   reports++;
+//   int packetSize = Udp.parsePacket();
+//   if (packetSize) {
+//     Serial.println("PACKET!");
+//   }
+//   sendUDPData();
+// }
 
 //  if (reports == DetectorConfig.reportsPerReset) {
 //    reports = 0;
@@ -385,4 +401,3 @@ ADCIntStatus(uint32_t ui32Base, uint32_t ui32SequenceNum, bool bMasked)
     return(ui32Temp);
 }
  */
-

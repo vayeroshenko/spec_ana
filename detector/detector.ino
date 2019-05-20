@@ -237,7 +237,7 @@ const int ui32Base = ADC0_BASE + ADC_SEQ + (ADC_SEQ_STEP * 0);
 #define CLEAR_INTERRUPT_ON_ADC0SEQ0 HWREG(ADC0_BASE + ADC_O_ISC) = 1
 #define PROCESS_VALUE(X)  if (X <= DetectorConfig.noiseLevel && DetectorRuntime.currentMax != 0) {\
     DetectorRuntime.peaks[DetectorRuntime.currentMax] += 1;     \
-  DetectorRuntime.overTheNoise = 0;                 \
+  DetectorRuntime.overTheNoise =  0;                 \
   DetectorRuntime.currentMax = 0;                   \
 }                                   \
 if (X > DetectorConfig.noiseLevel) {                  \
@@ -271,10 +271,10 @@ loopGoTo:
  PROCESS_VALUE(collectedData[last+3]);
     if (loops == 2048) {
        
-       for (int z = 0; z < 8192; ++z) {
-         Serial.println(collectedData[z]);
-         
-       }
+//       for (int z = 0; z < 8192; ++z) {
+//         Serial.println(collectedData[z]);
+//         
+//       }
        sendUDPData();
        loops = 0;
        last = 0;

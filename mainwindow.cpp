@@ -43,19 +43,19 @@ void MainWindow::readDatagram()
         QNetworkDatagram datagram = socket->receiveDatagram();
         int type = *((int*)datagram.data().constData());
         switch (type) {
-            case 1:
-                this->parseHandshake();
-                break;
-            case 2:
-                this->parseHandshake();
-                this->parseKeepAlive();
-                break;
-            case 3:
-                this->parseConfig(datagram);
-                break;
-            case 4:
-                this->parseData(datagram);
-                break;
+        case 1:
+            this->parseHandshake();
+            break;
+        case 2:
+            this->parseHandshake();
+            this->parseKeepAlive();
+            break;
+        case 3:
+            this->parseConfig(datagram);
+            break;
+        case 4:
+            this->parseData(datagram);
+            break;
         }
     }
 }
@@ -110,18 +110,40 @@ void MainWindow::parseData(const QNetworkDatagram& datagram)
             for(int i = 0; i < 4096; i++) {
                 char line = (char)old[i];
                 if (file.open(QIODevice::Append)) {
-                   file.write(&line);
-                   file.write(" ");
+                    file.write(&line);
+                    file.write(" ");
                 }
             }
         }
         file.close();
-        this->plot->setData(this->plotKeys, this->plotValues);
-        this->ui->spinTotalPeaks->setValue(S);
-        this->ui->plot->rescaleAxes();
-        this->ui->plot->xAxis->setRange(0, 4096);
-        this->ui->plot->replot();
+//        if (rebinCounter == 1){
+
+                    this->plot->setData(this->plotKeys, this->plotValues);
+
+//            hist hRebined = rebin(plotKeys,plotValues);
+//            this->plot->setData(hRebined.first, hRebined.second);
+            this->ui->spinTotalPeaks->setValue(S);
+            this->ui->plot->rescaleAxes();
+                    this->ui->plot->xAxis->setRange(0, 4096);
+//            this->ui->plot->xAxis->setRange(0, 512);
+            this->ui->plot->replot();
+//            rebinCounter = 0;
+//        }
+//        rebinCounter++;
     }
+}
+
+hist MainWindow::rebin(const QVector<double> &keys, const QVector<double> &values) {
+    QVector<double> newKeys(512);
+    QVector<double> newValues(512,0.);
+    for(int i = 0; i < 512; i++) {
+        newKeys[i] = i;
+        for (int j = 0; j < 8; ++j)
+            newValues[i] += (double)values[i*8+j];
+        newValues[i] /= 8.;
+    }
+    hist rebined(newKeys,newValues);
+    return rebined;
 }
 
 void MainWindow::sendHandshake()

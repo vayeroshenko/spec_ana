@@ -10,6 +10,7 @@ namespace Ui {
 class MainWindow;
 }
 
+typedef std::pair<QVector<double>,QVector<double>> hist;
 
 struct DetectorConfig {
   unsigned long int noiseLevel      = 0;
@@ -71,6 +72,10 @@ private:
 
     void setupPlot();
     void updatePlot();
+
+    int rebinCounter = 0;
+
+    hist rebin(const QVector<double> &keys, const QVector<double> &values);
 };
 
 #endif // MAINWINDOW_H

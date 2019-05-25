@@ -55,7 +55,9 @@ unsigned int reports = 0;
 
 struct {
   unsigned long int peaks[4096];
+  unsigned long int beforeMax = 0;
   unsigned long int currentMax = 0;
+  unsigned long int afterMax = 0;
   unsigned long int overTheNoise = 0;
 } DetectorRuntime;
 
@@ -235,15 +237,23 @@ const int ui32Base = ADC0_BASE + ADC_SEQ + (ADC_SEQ_STEP * 0);
 #define READ_DATA_FROM_ADC0SEQ0 HWREG(ui32Base + ADC_SSFIFO)
 #define INTERRUPT_ON_ADC0SEQ0 ((HWREG(ADC0_BASE + ADC_O_RIS) & (0x10000 | (1 << 0))))
 #define CLEAR_INTERRUPT_ON_ADC0SEQ0 HWREG(ADC0_BASE + ADC_O_ISC) = 1
-#define PROCESS_VALUE(X)  if (X <= DetectorConfig.noiseLevel && DetectorRuntime.currentMax != 0) {\
-    DetectorRuntime.peaks[DetectorRuntime.currentMax] += 1;     \
+#define PROCESS_VALUE(X)  if (X <= DetectorConfig.noiseLevel && DetectorRuntime.currentMax != 0) { \
+  DetectorRuntime.peak[DetectorRuntime.beforeMax  -  \
+  (3*DetectorRuntime.beforeMax - 4*DetectorRuntime.currentMax + DetectorRuntime.afterMax)* \
+  (3*DetectorRuntime.beforeMax - 4*DetectorRuntime.currentMax + DetectorRuntime.afterMax)/ \
+  (DetectorRuntime.beforeMax - 2*DetectorRuntime.currentMax + DetectorRuntime.afterMax) / 8] += 1; \
   DetectorRuntime.overTheNoise =  0;                 \
   DetectorRuntime.currentMax = 0;                   \
 }                                   \
 if (X > DetectorConfig.noiseLevel) {                  \
     if (X > DetectorRuntime.currentMax) {               \
-      DetectorRuntime.currentMax = X;                 \
-    }                                 \     
+      DetectorRuntime.beforeMax = DetectorRuntime.currentMax;                 \
+      DetectorRuntime.currentMax = X;                \
+    } \
+    
+    if (X < DetectorRuntime.currentMax && DetectorRuntime.afterMax == 0) {               \
+      DetectorRuntime.afterMax = X     \
+    } \
 }
 
 int collectedData[9000];

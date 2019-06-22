@@ -2,6 +2,7 @@
 #include "ui_mainwindow.h"
 #include <QDebug>
 #include <iostream>
+#include <fstream>
 #include <QNetworkDatagram>
 #include <QIODevice>
 
@@ -118,14 +119,13 @@ void MainWindow::parseData(const QNetworkDatagram& datagram)
         file.close();
 //        if (rebinCounter == 1){
 
-                    this->plot->setData(this->plotKeys, this->plotValues);
+//                    this->plot->setData(this->plotKeys, this->plotValues);
 
-//            hist hRebined = rebin(plotKeys,plotValues);
-//            this->plot->setData(hRebined.first, hRebined.second);
+            hist hRebined = rebin(plotKeys,plotValues, 8);
+            this->plot->setData(hRebined.first, hRebined.second);
             this->ui->spinTotalPeaks->setValue(S);
             this->ui->plot->rescaleAxes();
-                    this->ui->plot->xAxis->setRange(0, 4096);
-//            this->ui->plot->xAxis->setRange(0, 512);
+          this->ui->plot->xAxis->setRange(0, 4096/8);
             this->ui->plot->replot();
 //            rebinCounter = 0;
 //        }
@@ -133,14 +133,15 @@ void MainWindow::parseData(const QNetworkDatagram& datagram)
     }
 }
 
-hist MainWindow::rebin(const QVector<double> &keys, const QVector<double> &values) {
-    QVector<double> newKeys(512);
-    QVector<double> newValues(512,0.);
-    for(int i = 0; i < 512; i++) {
+hist MainWindow::rebin(const QVector<double> &keys, const QVector<double> &values, int n) {
+    int Nbin = keys.size()/n;
+    QVector<double> newKeys(Nbin);
+    QVector<double> newValues(Nbin, 0.);
+    for(int i = 0; i < Nbin; i++) {
         newKeys[i] = i;
-        for (int j = 0; j < 8; ++j)
-            newValues[i] += (double)values[i*8+j];
-        newValues[i] /= 8.;
+        for (int j = 0; j < n; ++j)
+            newValues[i] += (double)values[i*n+j];
+//        newValues[i] /= n;
     }
     hist rebined(newKeys,newValues);
     return rebined;
@@ -256,4 +257,15 @@ void MainWindow::on_spinLNLNew_valueChanged(int arg1)
 void MainWindow::on_spinHNLNew_valueChanged(int arg1)
 {
     //this->configInput.noiseLevelMeasurementsHigh = arg1;
+}
+
+void MainWindow::on_saveButton_clicked()
+{
+    std::ofstream fileSave;
+    fileSave.open("spectrum.txt");
+    for (int i = 0; i < 4096; ++i){
+        fileSave << plotValues[i] << std::endl;
+    }
+    fileSave.close();
+
 }

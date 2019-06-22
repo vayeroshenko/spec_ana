@@ -57,6 +57,8 @@ private slots:
 
     void on_spinHNLNew_valueChanged(int arg1);
 
+    void on_saveButton_clicked();
+
 private:
     Ui::MainWindow *ui;
 
@@ -75,7 +77,7 @@ private:
 
     int rebinCounter = 0;
 
-    hist rebin(const QVector<double> &keys, const QVector<double> &values);
+    hist rebin(const QVector<double> &keys, const QVector<double> &values, int n);
 };
 
 #endif // MAINWINDOW_H

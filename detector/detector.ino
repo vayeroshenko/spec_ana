@@ -53,6 +53,7 @@ unsigned long int timeTotal, timeBegin, timeEnd;
 // Detector globals
 unsigned int reports = 0;
 
+
 struct {
   unsigned long int peaks[4096];
   unsigned long int beforeMax = 0;
@@ -60,11 +61,12 @@ struct {
   unsigned long int afterMax = 0;
   unsigned long int overTheNoise = 0;
 } DetectorRuntime;
-
 // Detector config
 
 struct {
-  unsigned long int noiseLevel      = 360;
+//  unsigned long int noiseLevel      = 360;
+
+  unsigned long int noiseLevel      = 150;
 
 //  unsigned long int noiseLevel      = 0;
 
@@ -237,24 +239,35 @@ const int ui32Base = ADC0_BASE + ADC_SEQ + (ADC_SEQ_STEP * 0);
 #define READ_DATA_FROM_ADC0SEQ0 HWREG(ui32Base + ADC_SSFIFO)
 #define INTERRUPT_ON_ADC0SEQ0 ((HWREG(ADC0_BASE + ADC_O_RIS) & (0x10000 | (1 << 0))))
 #define CLEAR_INTERRUPT_ON_ADC0SEQ0 HWREG(ADC0_BASE + ADC_O_ISC) = 1
-#define PROCESS_VALUE(X)  if (X <= DetectorConfig.noiseLevel && DetectorRuntime.currentMax != 0) { \
-  DetectorRuntime.peak[DetectorRuntime.beforeMax  -  \
-  (3*DetectorRuntime.beforeMax - 4*DetectorRuntime.currentMax + DetectorRuntime.afterMax)* \
-  (3*DetectorRuntime.beforeMax - 4*DetectorRuntime.currentMax + DetectorRuntime.afterMax)/ \
-  (DetectorRuntime.beforeMax - 2*DetectorRuntime.currentMax + DetectorRuntime.afterMax) / 8] += 1; \
+#define PROCESS_VALUE(X)  if (X <= DetectorConfig.noiseLevel && DetectorRuntime.currentMax != 0) {\
+    DetectorRuntime.peaks[DetectorRuntime.currentMax] += 1;     \
   DetectorRuntime.overTheNoise =  0;                 \
   DetectorRuntime.currentMax = 0;                   \
 }                                   \
 if (X > DetectorConfig.noiseLevel) {                  \
     if (X > DetectorRuntime.currentMax) {               \
-      DetectorRuntime.beforeMax = DetectorRuntime.currentMax;                 \
-      DetectorRuntime.currentMax = X;                \
-    } \
-    
-    if (X < DetectorRuntime.currentMax && DetectorRuntime.afterMax == 0) {               \
-      DetectorRuntime.afterMax = X     \
-    } \
+      DetectorRuntime.currentMax = X;                 \
+    }                                 \     
 }
+
+//#define PROCESS_VALUE(X)  if (X <= DetectorConfig.noiseLevel && DetectorRuntime.currentMax != 0) { \
+//  DetectorRuntime.peaks[DetectorRuntime.beforeMax  -  \
+//  (3*DetectorRuntime.beforeMax - 4*DetectorRuntime.currentMax + DetectorRuntime.afterMax)* \
+//  (3*DetectorRuntime.beforeMax - 4*DetectorRuntime.currentMax + DetectorRuntime.afterMax)/ \
+//  (DetectorRuntime.beforeMax - 2*DetectorRuntime.currentMax + DetectorRuntime.afterMax) / 8] += 1; \
+//  DetectorRuntime.overTheNoise =  0;                 \
+//  DetectorRuntime.currentMax = 0;                   \
+//}                                   \
+//if (X > DetectorConfig.noiseLevel) {                  \
+//    if (X > DetectorRuntime.currentMax) {               \
+//      DetectorRuntime.beforeMax = DetectorRuntime.currentMax;                 \
+//      DetectorRuntime.currentMax = X;                \
+//    } \
+//    \
+//    if (X < DetectorRuntime.currentMax && DetectorRuntime.afterMax == 0) {               \
+//      DetectorRuntime.afterMax = X;     \
+//    } \
+//}
 
 int collectedData[9000];
 int last = 0;
@@ -270,7 +283,11 @@ loopGoTo:
    collectedData[last+1] = READ_DATA_FROM_ADC0SEQ0;
    collectedData[last+2] = READ_DATA_FROM_ADC0SEQ0;
    collectedData[last+3] = READ_DATA_FROM_ADC0SEQ0;
-   last += 4;
+//   collectedData[last+4] = READ_DATA_FROM_ADC0SEQ0;
+//   collectedData[last+5] = READ_DATA_FROM_ADC0SEQ0;
+//   collectedData[last+6] = READ_DATA_FROM_ADC0SEQ0;
+//   collectedData[last+7] = READ_DATA_FROM_ADC0SEQ0;
+   
 // values[0] = READ_DATA_FROM_ADC0SEQ0;
 // values[1] = READ_DATA_FROM_ADC0SEQ0;
 // values[2] = READ_DATA_FROM_ADC0SEQ0;
@@ -279,11 +296,16 @@ loopGoTo:
  PROCESS_VALUE(collectedData[last+1]);
  PROCESS_VALUE(collectedData[last+2]);
  PROCESS_VALUE(collectedData[last+3]);
+// 
+// PROCESS_VALUE(collectedData[last+4]);
+// PROCESS_VALUE(collectedData[last+5]);
+// PROCESS_VALUE(collectedData[last+6]);
+// PROCESS_VALUE(collectedData[last+7]);
+ last += 4;
     if (loops == 2048) {
        
 //       for (int z = 0; z < 8192; ++z) {
-//         Serial.println(collectedData[z]);
-//         
+//         Serial.println(collectedData[z]); 
 //       }
        sendUDPData();
        loops = 0;
